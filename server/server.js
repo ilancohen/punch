@@ -1,65 +1,21 @@
-'use strict';
+// server.js
 
-/**
- * Module dependencies.
- */
-var express = require('express'),
-    fs = require('fs'),
-    passport = require('passport'),
-    logger = require('mean-logger');
+	// set up ========================
+	var express  = require('express');
+	var app      = express(); 								// create our app w/ express
+	var mongoose = require('mongoose'); 					// mongoose for mongodb
 
-/**
- * Main application entry file.
- * Please note that the order of loading is important.
- */
+	// configuration =================
 
-// Load configurations
-// Set the node enviornment variable if not set before
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+	mongoose.connect('mongodb://node:node@mongo.onmodulus.net:27017/uwO3mypu'); 	// connect to mongoDB database on modulus.io
 
-// Initializing system variables 
-var config = require('./config/config'),
-    auth = require('./config/middlewares/authorization'),
-    mongoose = require('mongoose');
+	app.configure(function() {
+		app.use(express.static(__dirname + '/public')); 		// set the static files location /public/img will be /img for users
+		app.use(express.logger('dev')); 						// log every request to the console
+		app.use(express.bodyParser()); 							// pull information from html in POST
+		app.use(express.methodOverride()); 						// simulate DELETE and PUT
+	});
 
-// Bootstrap db connection
-var db = mongoose.connect(config.db);
-
-// Bootstrap models
-var models_path = __dirname + '/app/models';
-var walk = function(path) {
-    fs.readdirSync(path).forEach(function(file) {
-        var newPath = path + '/' + file;
-        var stat = fs.statSync(newPath);
-        if (stat.isFile()) {
-            if (/(.*)\.(js$|coffee$)/.test(file)) {
-                require(newPath);
-            }
-        } else if (stat.isDirectory()) {
-            walk(newPath);
-        }
-    });
-};
-walk(models_path);
-
-// Bootstrap passport config
-require('./config/passport')(passport);
-
-var app = express();
-
-// Express settings
-require('./config/express')(app, passport, db);
-
-// Bootstrap routes
-require('./config/routes')(app, passport, auth);
-
-// Start the app by listening on <port>
-var port = process.env.PORT || config.port;
-app.listen(port);
-console.log('Express app started on port ' + port);
-
-// Initializing logger
-logger.init(app, passport, mongoose);
-
-// Expose app
-exports = module.exports = app;
+	// listen (start app with node server.js) ======================================
+	app.listen(8080);
+	console.log("App listening on port 8080");
